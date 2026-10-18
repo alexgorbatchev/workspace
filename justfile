@@ -55,21 +55,21 @@ align branch="main":
     done
     echo "All active submodules aligned to '{{ branch }}'."
 
-# Add a new repository to the monorepo catalog (e.g. `just add utils/better-fonts-cli`)
-add path url="" branch="main":
+# Add one or more repositories to the monorepo catalog (e.g. `just add utils/better-fonts-cli` or `just add tui/gio-lucide tui/go-tui`)
+add *paths:
     #!/usr/bin/env bash
     set -euo pipefail
-    target_path="{{ path }}"
-    target_url="{{ url }}"
-    target_branch="{{ branch }}"
-    if [ -z "$target_url" ]; then
+    for target_path in {{ paths }}; do
         repo_name="$(basename "$target_path")"
         target_url="https://github.com/alexgorbatchev/${repo_name}.git"
-    fi
-    echo "==> Adding submodule $target_path from $target_url (branch: $target_branch)..."
-    git submodule add -b "$target_branch" "$target_url" "$target_path"
-    git -C "$target_path" checkout "$target_branch" -q 2>/dev/null || true
-    echo "==> Registered $target_path in .gitmodules."
+        target_branch="main"
+        if [ "$repo_name" = "commute-dashboard" ]; then
+            target_branch="ccr-91413bd0-wc5mq4"
+        fi
+        echo "==> Adding submodule $target_path from $target_url ($target_branch)..."
+        git submodule add -b "$target_branch" "$target_url" "$target_path"
+        git -C "$target_path" checkout "$target_branch" -q 2>/dev/null || true
+    done
     just status
 
 # Safely unregister and delete a submodule without manual Git surgery

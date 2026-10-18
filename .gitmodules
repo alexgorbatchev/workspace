@@ -34,3 +34,223 @@
 	path = dj/goshazam
 	url = https://github.com/alexgorbatchev/goshazam.git
 	branch = main
+[submodule "hardware-firmware/cyboard-imprint"]
+	path = hardware-firmware/cyboard-imprint
+	url = https://github.com/alexgorbatchev/cyboard-imprint.git
+	branch = main
+[submodule "hardware-firmware/posture-guard"]
+	path = hardware-firmware/posture-guard
+	url = https://github.com/alexgorbatchev/posture-guard.git
+	branch = main
+[submodule "tui/gio-lucide"]
+	path = tui/gio-lucide
+	url = https://github.com/alexgorbatchev/gio-lucide.git
+	branch = main
+[submodule "tui/go-tui"]
+	path = tui/go-tui
+	url = https://github.com/alexgorbatchev/go-tui.git
+	branch = main
+[submodule "tui/go-tui-frame"]
+	path = tui/go-tui-frame
+	url = https://github.com/alexgorbatchev/go-tui-frame.git
+	branch = main
+[submodule "ui-design/dedent-string"]
+	path = ui-design/dedent-string
+	url = https://github.com/alexgorbatchev/dedent-string.git
+	branch = main
+[submodule "ui-design/mouseless-grid-editor"]
+	path = ui-design/mouseless-grid-editor
+	url = https://github.com/alexgorbatchev/mouseless-grid-editor.git
+	branch = main
+[submodule "ui-design/shadcn"]
+	path = ui-design/shadcn
+	url = https://github.com/alexgorbatchev/shadcn.git
+	branch = main
+[submodule "remarkable/go-remarkable-cloud"]
+	path = remarkable/go-remarkable-cloud
+	url = https://github.com/alexgorbatchev/go-remarkable-cloud.git
+	branch = main
+[submodule "remarkable/go-remarkable-render"]
+	path = remarkable/go-remarkable-render
+	url = https://github.com/alexgorbatchev/go-remarkable-render.git
+	branch = main
+[submodule "remarkable/go-rmscene"]
+	path = remarkable/go-rmscene
+	url = https://github.com/alexgorbatchev/go-rmscene.git
+	branch = main
+[submodule "remarkable/remarkable-cli"]
+	path = remarkable/remarkable-cli
+	url = https://github.com/alexgorbatchev/remarkable-cli.git
+	branch = main
+[submodule "remarkable/remarkable-daily-planner-generator"]
+	path = remarkable/remarkable-daily-planner-generator
+	url = https://github.com/alexgorbatchev/remarkable-daily-planner-generator.git
+	branch = main
+[submodule "audio-voice/ambient-recorder-cli"]
+	path = audio-voice/ambient-recorder-cli
+	url = https://github.com/alexgorbatchev/ambient-recorder-cli.git
+	branch = main
+[submodule "audio-voice/deepgram-transcribe-cli"]
+	path = audio-voice/deepgram-transcribe-cli
+	url = https://github.com/alexgorbatchev/deepgram-transcribe-cli.git
+	branch = main
+[submodule "audio-voice/omi"]
+	path = audio-voice/omi
+	url = https://github.com/alexgorbatchev/omi.git
+	branch = main
+[submodule "audio-voice/simple-ptt"]
+	path = audio-voice/simple-ptt
+	url = https://github.com/alexgorbatchev/simple-ptt.git
+	branch = main
+[submodule "dev-tooling/devhost"]
+	path = dev-tooling/devhost
+	url = https://github.com/alexgorbatchev/devhost.git
+	branch = main
+[submodule "dev-tooling/dotfiles"]
+	path = dev-tooling/dotfiles
+	url = https://github.com/alexgorbatchev/dotfiles.git
+	branch = main
+[submodule "dev-tooling/dotfiles-catalog"]
+	path = dev-tooling/dotfiles-catalog
+	url = https://github.com/alexgorbatchev/dotfiles-catalog.git
+	branch = main
+[submodule "dev-tooling/go-scaffold-cli"]
+	path = dev-tooling/go-scaffold-cli
+	url = https://github.com/alexgorbatchev/go-scaffold-cli.git
+	branch = main
+[submodule "dj/dmx-lights"]
+	path = dj/dmx-lights
+	url = https://github.com/alexgorbatchev/dmx-lights.git
+	branch = main
+[submodule "dj/engine-dj-app"]
+	path = dj/engine-dj-app
+	url = https://github.com/alexgorbatchev/engine-dj-app.git
+	branch = main
+[submodule "dj/shazam-cli"]
+	path = dj/shazam-cli
+	url = https://github.com/alexgorbatchev/shazam-cli.git
+	branch = main
+[submodule "utils/better-fonts-cli"]
+	path = utils/better-fonts-cli
+	url = https://github.com/alexgorbatchev/better-fonts-cli.git
+	branch = main
+[submodule "utils/cron-person-cli"]
+	path = utils/cron-person-cli
+	url = https://github.com/alexgorbatchev/cron-person-cli.git
+	branch = main
+[submodule "utils/einstar-vega-cli"]
+	path = utils/einstar-vega-cli
+	url = https://github.com/alexgorbatchev/einstar-vega-cli.git
+	branch = main
+[submodule "utils/firecrawl-cli"]
+	path = utils/firecrawl-cli
+	url = https://github.com/alexgorbatchev/firecrawl-cli.git
+	branch = main
+[submodule "utils/gws-cache-cli"]
+	path = utils/gws-cache-cli
+	url = https://github.com/alexgorbatchev/gws-cache-cli.git
+	branch = main
+[submodule "utils/pge-cost-cli"]
+	path = utils/pge-cost-cli
+	url = https://github.com/alexgorbatchev/pge-cost-cli.git
+	branch = main
+[submodule "utils/porter"]
+	path = utils/porter
+	url = https://github.com/alexgorbatchev/porter.git
+	branch = main
+[submodule "utils/toon-cli"]
+	path = utils/toon-cli
+	url = https://github.com/alexgorbatchev/toon-cli.git
+	branch = main
+[submodule "apps/beads-dashboard"]
+	path = apps/beads-dashboard
+	url = https://github.com/alexgorbatchev/beads-dashboard.git
+	branch = main
+[submodule "apps/commute-dashboard"]
+	path = apps/commute-dashboard
+	url = https://github.com/alexgorbatchev/commute-dashboard.git
+	branch = ccr-91413bd0-wc5mq4
+[submodule "apps/floor-plan-ai"]
+	path = apps/floor-plan-ai
+	url = https://github.com/alexgorbatchev/floor-plan-ai.git
+	branch = main
+[submodule "apps/google-photos-sync"]
+	path = apps/google-photos-sync
+	url = https://github.com/alexgorbatchev/google-photos-sync.git
+	branch = main
+[submodule "apps/monorepo"]
+	path = apps/monorepo
+	url = https://github.com/alexgorbatchev/monorepo.git
+	branch = main
+[submodule "apps/tools-to-try"]
+	path = apps/tools-to-try
+	url = https://github.com/alexgorbatchev/tools-to-try.git
+	branch = main
+[submodule "ai/claude/claude-workspace"]
+	path = ai/claude/claude-workspace
+	url = https://github.com/alexgorbatchev/claude-workspace.git
+	branch = main
+[submodule "ai/pi/pi-env"]
+	path = ai/pi/pi-env
+	url = https://github.com/alexgorbatchev/pi-env.git
+	branch = main
+[submodule "ai/pi/pi-file-change-reminder"]
+	path = ai/pi/pi-file-change-reminder
+	url = https://github.com/alexgorbatchev/pi-file-change-reminder.git
+	branch = main
+[submodule "ai/pi/pi-quick-answer"]
+	path = ai/pi/pi-quick-answer
+	url = https://github.com/alexgorbatchev/pi-quick-answer.git
+	branch = main
+[submodule "ai/pi/pi-skill-library"]
+	path = ai/pi/pi-skill-library
+	url = https://github.com/alexgorbatchev/pi-skill-library.git
+	branch = main
+[submodule "ai/pi/pi-workspace"]
+	path = ai/pi/pi-workspace
+	url = https://github.com/alexgorbatchev/pi-workspace.git
+	branch = main
+[submodule "ai/standards/ai-registry"]
+	path = ai/standards/ai-registry
+	url = https://github.com/alexgorbatchev/ai-registry.git
+	branch = main
+[submodule "ai/standards/ts-unused"]
+	path = ai/standards/ts-unused
+	url = https://github.com/alexgorbatchev/ts-unused.git
+	branch = main
+[submodule "ai/standards/typescript-ai-policy"]
+	path = ai/standards/typescript-ai-policy
+	url = https://github.com/alexgorbatchev/typescript-ai-policy.git
+	branch = main
+[submodule "ai/tools/agent-parser"]
+	path = ai/tools/agent-parser
+	url = https://github.com/alexgorbatchev/agent-parser.git
+	branch = main
+[submodule "ai/tools/agent-print-session-cli"]
+	path = ai/tools/agent-print-session-cli
+	url = https://github.com/alexgorbatchev/agent-print-session-cli.git
+	branch = main
+[submodule "ai/tools/agent-status"]
+	path = ai/tools/agent-status
+	url = https://github.com/alexgorbatchev/agent-status.git
+	branch = main
+[submodule "ai/tools/agent-watcher"]
+	path = ai/tools/agent-watcher
+	url = https://github.com/alexgorbatchev/agent-watcher.git
+	branch = main
+[submodule "ai/tools/agent-wrap"]
+	path = ai/tools/agent-wrap
+	url = https://github.com/alexgorbatchev/agent-wrap.git
+	branch = main
+[submodule "ai/tools/tiktoken-cli"]
+	path = ai/tools/tiktoken-cli
+	url = https://github.com/alexgorbatchev/tiktoken-cli.git
+	branch = main
+[submodule "ai/tools/workspace-overlay-cli"]
+	path = ai/tools/workspace-overlay-cli
+	url = https://github.com/alexgorbatchev/workspace-overlay-cli.git
+	branch = main
+[submodule "ai/tools/youtube-captions-dl"]
+	path = ai/tools/youtube-captions-dl
+	url = https://github.com/alexgorbatchev/youtube-captions-dl.git
+	branch = main
