@@ -19,19 +19,14 @@
 - [Git](https://git-scm.com/) (version 2.30 or newer)
 - [Just](https://github.com/casey/just) command runner
 
-# Installation
+# Installation & Setup
 
-Clone recursively to fetch the parent repository and all member submodules in a single step:
+Clone the repository and run `just setup` to initialize, clone, and align all submodules in one command:
 
 ```bash
-git clone --recurse-submodules https://github.com/alexgorbatchev/dj-cli.git monorepo
+git clone https://github.com/alexgorbatchev/dj-cli.git monorepo
 cd monorepo
-```
-
-If you previously cloned without submodules, initialize and fetch them:
-
-```bash
-git submodule update --init --recursive
+just setup
 ```
 
 # Quick Start
@@ -42,11 +37,24 @@ Inspect the current status of all submodules across the workspace:
 just status
 ```
 
-Inspect status for a specific category:
+Synchronize the entire workspace (fetches root and fast-forwards all submodules to their remote tracking branches):
+
+```bash
+just sync
+```
+
+Inspect status or run checks for a specific category:
 
 ```bash
 just dj status
 just go_libs status
+just dj check
+```
+
+Add a new repository to a category bucket:
+
+```bash
+just add utils/better-fonts-cli
 ```
 
 Sample Output (`just status`):
@@ -78,14 +86,20 @@ just go_libs check
 
 | Command | Description |
 | :--- | :--- |
+| `just setup` | One-shot workspace setup: recursively initializes submodules, aligns tracking branches, and displays status |
+| `just sync` | Full synchronization: pulls root updates, concurrently fetches submodules, merges tracking branches, and aligns |
 | `just status` | Displays current branch, clean/dirty working tree status, and upstream ahead/behind counts for all submodules |
 | `just <bucket> status` | Displays status scoped to a specific category bucket (e.g. `just dj status`, `just go_libs status`) |
+| `just align [branch]` | Aligns all submodules to checkout their tracking branch (defaults to `main`), preventing detached HEADs |
+| `just add <path> [url]` | Adds and registers a new repository as a submodule (defaults URL to `https://github.com/alexgorbatchev/<name>.git`) |
+| `just remove <path>` | Safely unregisters and removes a submodule from `.gitmodules` and Git index |
 | `just fetch` | Concurrently fetches remote updates across all submodules without modifying working directories |
 | `just update` | Fetches remotes and merges upstream tracking changes into each submodule |
 | `just check` | Runs linters, static analysis, and code quality checks across all submodules |
 | `just <bucket> check` | Runs checks scoped to a specific category bucket |
 | `just test` | Executes unit test suites across all submodules |
 | `just <bucket> test` | Executes unit test suites scoped to a specific category bucket |
+| `just clean` | Cleans build binaries, coverage profiles, and temporary artifacts across all submodules |
 | `just git <args>` | Runs an arbitrary Git command across every submodule via `git submodule foreach` |
 
 # Categories

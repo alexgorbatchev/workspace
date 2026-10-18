@@ -11,6 +11,12 @@ Unified workspace orchestrator and management hub across project categories.
 The **catalog** refers to the curated set of member repositories (applications, CLI utilities, and core libraries) tracked and managed as Git submodules within this workspace.
 
 ## Shared commands
+- Initial workspace setup: `just setup`
+- Full synchronization: `just sync`
+- Align all tracking branches: `just align [branch]`
+- Add member repository: `just add <path> [url] [branch]`
+- Remove member repository: `just remove <path>`
+- Clean build artifacts across submodules: `just clean`
 - Status overview across all buckets: `just status`
 - Scoped bucket status: `just <bucket> status` (e.g. `just dj status`, `just go_libs status`)
 - Update all submodules: `just update`

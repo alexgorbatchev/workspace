@@ -34,6 +34,42 @@ status:
         printf "%-30s %-14s %-10s %s\n" "$bucket/$r" "$branch" "$status" "$remote_info"
     done
 
+# Synchronize and fast-forward all submodules in this bucket
+sync:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bucket="$(basename "$PWD")"
+    gitmodules="$(git rev-parse --show-toplevel)/.gitmodules"
+    repos=$(git config --file "$gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | grep "^${bucket}/" | sed "s|^${bucket}/||" | sort || true)
+    for r in $repos; do
+        if [ -d "$r" ]; then
+            echo "==> Syncing $bucket/$r..."
+            git -C "$r" fetch --all --prune -q 2>/dev/null &
+        fi
+    done
+    wait
+    for r in $repos; do
+        if [ -d "$r" ]; then
+            git -C "$r" merge --ff-only "@{u}" 2>/dev/null || true
+            git -C "$r" checkout main -q 2>/dev/null || true
+        fi
+    done
+    just status
+
+# Align submodules in this bucket to checkout their tracking branch
+align branch="main":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bucket="$(basename "$PWD")"
+    gitmodules="$(git rev-parse --show-toplevel)/.gitmodules"
+    repos=$(git config --file "$gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | grep "^${bucket}/" | sed "s|^${bucket}/||" | sort || true)
+    for r in $repos; do
+        if [ -d "$r/.git" ] || [ -f "$r/.git" ]; then
+            git -C "$r" checkout "{{ branch }}" -q 2>/dev/null || true
+        fi
+    done
+    echo "Submodules in $bucket aligned to '{{ branch }}'."
+
 # Run checks across submodules in this bucket
 check:
     #!/usr/bin/env bash
@@ -79,3 +115,22 @@ test:
             just -f "$jf" test
         fi
     done
+
+# Clean build artifacts across submodules in this bucket
+clean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bucket="$(basename "$PWD")"
+    gitmodules="$(git rev-parse --show-toplevel)/.gitmodules"
+    repos=$(git config --file "$gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | grep "^${bucket}/" | sed "s|^${bucket}/||" | sort || true)
+    for r in $repos; do
+        jf="$r/justfile"
+        [ -f "$jf" ] || jf="$r/Justfile"
+        if [ -f "$jf" ]; then
+            if just -f "$jf" --summary | grep -qw "clean"; then
+                echo "==> Cleaning $bucket/$r..."
+                just -f "$jf" clean
+            fi
+        fi
+    done
+    echo "Submodules in $bucket cleaned."
