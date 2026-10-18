@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-18 13:40
-last_modified: 2026-10-18 13:40
+last_modified: 2026-10-18 14:05
 status: current
 ---
 
@@ -16,6 +16,6 @@ Inherits all standing workspace boundaries, code coverage requirements (90%), an
 - Run tests across TUI tools: `just test`
 
 ## Member repositories
-- `gio-lucide`: Lucide icon bindings for Gio GUI framework
-- `go-tui`: Terminal user interface component and layout primitives
-- `go-tui-frame`: Go library for wrapping external TUIs with headers, footers, sidebars, and borders via libghostty
+- `gio-lucide/` -> Lucide icon bindings for Gio GUI framework
+- `go-tui/` -> Terminal user interface component and layout primitives
+- `go-tui-frame/` -> Go library for wrapping external TUIs with headers, footers, sidebars, and borders via libghostty

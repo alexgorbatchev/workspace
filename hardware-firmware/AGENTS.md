@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-18 13:40
-last_modified: 2026-10-18 13:40
+last_modified: 2026-10-18 14:05
 status: current
 ---
 
@@ -16,5 +16,5 @@ Inherits all standing workspace boundaries, code coverage requirements (90%), an
 - Run tests across hardware tools: `just test`
 
 ## Member repositories
-- `cyboard-imprint`: Diagnostics, tooling, and firmware patches for Cyboard Imprint split mechanical keyboard with dual trackballs
-- `posture-guard`: Real-time posture tracking and ergonomics monitoring in Go using local computer vision
+- `cyboard-imprint/` -> Diagnostics, tooling, and firmware patches for Cyboard Imprint split mechanical keyboard with dual trackballs
+- `posture-guard/` -> Real-time posture tracking and ergonomics monitoring in Go using local computer vision
