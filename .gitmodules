@@ -1,0 +1,36 @@
+[submodule "tag-track-cli"]
+	path = tag-track-cli
+	url = https://github.com/alexgorbatchev/tag-track-cli.git
+	branch = main
+[submodule "engine-cli"]
+	path = engine-cli
+	url = https://github.com/alexgorbatchev/engine-cli.git
+	branch = main
+[submodule "fetch-mix-cli"]
+	path = fetch-mix-cli
+	url = https://github.com/alexgorbatchev/fetch-mix-cli.git
+	branch = main
+[submodule "fetch-track-cli"]
+	path = fetch-track-cli
+	url = https://github.com/alexgorbatchev/fetch-track-cli.git
+	branch = main
+[submodule "engine-stem-cli"]
+	path = engine-stem-cli
+	url = https://github.com/alexgorbatchev/engine-stem-cli.git
+	branch = main
+[submodule "cobra-help-tree"]
+	path = cobra-help-tree
+	url = https://github.com/alexgorbatchev/cobra-help-tree.git
+	branch = main
+[submodule "godeps"]
+	path = godeps
+	url = https://github.com/alexgorbatchev/godeps.git
+	branch = main
+[submodule "gochromaprint"]
+	path = gochromaprint
+	url = https://github.com/alexgorbatchev/gochromaprint.git
+	branch = main
+[submodule "goshazam"]
+	path = goshazam
+	url = https://github.com/alexgorbatchev/goshazam.git
+	branch = main
