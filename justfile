@@ -1,31 +1,32 @@
 set dotenv-load := false
 
-# Modular justfile submodules for scoped tool execution (`just <tool> <recipe>`)
-mod? cobra_help_tree 'cobra-help-tree/justfile'
-mod? engine 'engine-cli/justfile'
-mod? stem 'engine-stem-cli/justfile'
-mod? fetch_mix 'fetch-mix-cli/justfile'
-mod? fetch_track 'fetch-track-cli/justfile'
-mod? gochromaprint 'gochromaprint/justfile'
-mod? godeps 'godeps/justfile'
-mod? goshazam 'goshazam/justfile'
-mod? tag_track 'tag-track-cli/justfile'
+# Modular bucket justfiles
+mod? ai 'ai/justfile'
+mod? apps 'apps/justfile'
+mod? audio_voice 'audio-voice/justfile'
+mod? dev_tooling 'dev-tooling/justfile'
+mod? dj 'dj/justfile'
+mod? go_libs 'go-libs/justfile'
+mod? hardware_firmware 'hardware-firmware/justfile'
+mod? remarkable 'remarkable/justfile'
+mod? tui 'tui/justfile'
+mod? ui_design 'ui-design/justfile'
+mod? utils 'utils/justfile'
 
-# Catalog submodules dynamically discovered from .gitmodules
+# All catalog submodules dynamically discovered from .gitmodules
 repos := `git config --file .gitmodules --get-regexp '^submodule\..*\.path$' | awk '{print $2}' | sort | tr '\n' ' '`
 
-# Default recipe: list available recipes
 default:
     @just --list
 
-# Show status across all catalog submodules
+# Show status across all submodules in all buckets
 status:
     #!/usr/bin/env bash
     set -euo pipefail
-    printf "%-22s %-14s %-10s %s\n" "SUBMODULE" "BRANCH" "STATUS" "UPSTREAM"
+    printf "%-32s %-14s %-10s %s\n" "SUBMODULE" "BRANCH" "STATUS" "UPSTREAM"
     for r in {{ repos }}; do
         if [ ! -d "$r/.git" ] && [ ! -f "$r/.git" ]; then
-            printf "%-22s %-14s %-10s %s\n" "$r" "-" "missing" "-"
+            printf "%-32s %-14s %-10s %s\n" "$r" "-" "missing" "-"
             continue
         fi
         branch=$(git -C "$r" branch --show-current 2>/dev/null || echo "detached")
@@ -39,10 +40,10 @@ status:
         else
             remote_info="no-upstream"
         fi
-        printf "%-22s %-14s %-10s %s\n" "$r" "$branch" "$status" "$remote_info"
+        printf "%-32s %-14s %-10s %s\n" "$r" "$branch" "$status" "$remote_info"
     done
 
-# Fetch updates for all catalog submodules in parallel
+# Fetch updates for all submodules in parallel
 fetch:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -54,13 +55,13 @@ fetch:
     wait
     echo "All submodules fetched."
 
-# Update all catalog submodules from their tracking branches
+# Update all submodules from their tracking branches
 update: fetch
     #!/usr/bin/env bash
     set -euo pipefail
     git submodule update --remote --merge
 
-# Run static checks across catalog submodules
+# Run checks across all buckets
 check:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -79,7 +80,7 @@ check:
         fi
     done
 
-# Run unit tests across catalog submodules
+# Run unit tests across all buckets
 test:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -92,6 +93,6 @@ test:
         fi
     done
 
-# Run arbitrary git command across all catalog submodules
+# Run arbitrary git command across all submodules
 git *args:
     git submodule foreach 'git {{ args }}'

@@ -1,40 +1,48 @@
 ---
 created_on: 2026-10-18 09:53
-last_modified: 2026-10-18 12:45
+last_modified: 2026-10-18 13:55
 status: current
 ---
 
-# dj-cli
+# monorepo
 
-Unified workspace orchestrator and management hub for the DJ toolchain ecosystem.
+Unified workspace orchestrator and management hub across project categories.
 
 The **catalog** refers to the curated set of member repositories (applications, CLI utilities, and core libraries) tracked and managed as Git submodules within this workspace.
 
 ## Shared commands
-- Status overview: `just status`
+- Status overview across all buckets: `just status`
+- Scoped bucket status: `just <bucket> status` (e.g. `just dj status`, `just go_libs status`)
 - Update all submodules: `just update`
 - Fetch all submodules: `just fetch`
-- Run checks across all submodules: `just check`
-- Run tests across all submodules: `just test`
+- Run checks across all buckets: `just check`
+- Run checks within a bucket: `just <bucket> check`
+- Run tests across all buckets: `just test`
+- Run tests within a bucket: `just <bucket> test`
 - Run Git command across submodules: `just git <args>`
-- Run scoped submodule recipe: `just <tool> <recipe>` (e.g. `just engine vet`, `just tag_track test`)
 
-## Workspace map (Catalog)
-- `cobra-help-tree/` -> `cobra-help-tree/AGENTS.md` (CLI command hierarchy ASCII tree renderer for terminal help screens)
-- `engine-cli/` -> `engine-cli/AGENTS.md` (Engine DJ database, playlist, and artwork manager)
-- `engine-stem-cli/` -> `engine-stem-cli/AGENTS.md` (Engine DJ audio stem inspection, decryption, and extraction utility)
-- `fetch-mix-cli/` -> `fetch-mix-cli/AGENTS.md` (DJ mix tracklist and audio fetcher)
-- `fetch-track-cli/` -> `fetch-track-cli/AGENTS.md` (Audio downloader and quality verifier)
-- `gochromaprint/` -> `gochromaprint/README.md` (Pure Go port of Chromaprint audio fingerprinting library)
-- `godeps/` -> `godeps/AGENTS.md` (Zero-token external binary dependency manager and self-update library)
-- `goshazam/` -> `goshazam/README.md` (Pure Go port of Shazam reverse-engineered API and audio fingerprinting)
-- `tag-track-cli/` -> `tag-track-cli/AGENTS.md` (Audio metadata inspection and tagging utility)
+## Category map (Buckets)
+- `ai/` -> `ai/AGENTS.md` (AI coding agent harnesses, extensions, protocols, standards, and tools)
+  - `ai/claude/` (Claude Code plugins)
+  - `ai/pi/` (Pi Coding Agent extensions and packages)
+  - `ai/standards/` (Canonical skills, policies, and static analysis)
+  - `ai/tools/` (Streaming parsers, session CLIs, and observability tools)
+- `apps/` -> `apps/AGENTS.md` (Standalone web applications, dashboards, and prototypes)
+- `audio-voice/` -> `audio-voice/AGENTS.md` (Audio capture, speech-to-text, and dictation tools)
+- `dev-tooling/` -> `dev-tooling/AGENTS.md` (Developer environment, dotfiles, scaffolding, and proxies)
+- `dj/` -> `dj/AGENTS.md` (DJ library database, audio acquisition, stems, and tagging toolchain)
+- `go-libs/` -> `go-libs/AGENTS.md` (Core reusable Go libraries and CLI packages)
+- `hardware-firmware/` -> `hardware-firmware/AGENTS.md` (Physical devices, keyboard firmware, and vision monitors)
+- `remarkable/` -> `remarkable/AGENTS.md` (reMarkable cloud sync gateways, vector stroke renderers, and planners)
+- `tui/` -> `tui/AGENTS.md` (Terminal UI layout primitives, icons, and libghostty wrappers)
+- `ui-design/` -> `ui-design/AGENTS.md` (Monospace design systems, React component libraries, and canvas editors)
+- `utils/` -> `utils/AGENTS.md` (General system utilities, font patchers, and scrapers)
 
 ## Shared gotchas
 - **Submodule Detached HEAD:** `git submodule update` without `--merge` checks out detached HEADs. Always use `just update` (`git submodule update --remote --merge`) or checkout the appropriate branch before making changes inside a submodule.
-- **Uncommitted Submodule Pointers:** Modifying code inside a submodule leaves the submodule dirty and generates uncommitted gitlink changes in `dj-cli`. Run `just status` before attempting updates or committing.
+- **Uncommitted Submodule Pointers:** Modifying code inside a submodule leaves the submodule dirty and generates uncommitted gitlink changes in the root. Run `just status` before attempting updates or committing.
 - **Fresh Clones Require Recursive Submodules:** Always clone with `git clone --recurse-submodules` or run `git submodule update --init --recursive` before running workspace recipes.
-- **Working Directory Isolation:** Commands dispatched via `just <tool> <recipe>` execute inside that submodule's directory. Never assume the current working directory is the parent workspace root when writing child recipes.
+- **Working Directory Isolation:** Commands dispatched via `just <bucket> <recipe>` execute inside that bucket's directory. Never assume the current working directory is the parent workspace root when writing child recipes.
 
 ## Shared boundaries
 - Always: persist only standing project instructions that apply to future tasks; update the relevant rule in place when it changes
@@ -47,4 +55,4 @@ The **catalog** refers to the curated set of member repositories (applications, 
 
 ## References
 - `.gitmodules`: Submodule tracking specifications and remote URLs
-- `justfile`: Workspace automation recipes and modular submodule declarations
+- `justfile`: Workspace automation recipes and modular bucket declarations

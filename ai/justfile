@@ -1,0 +1,81 @@
+set dotenv-load := false
+
+default:
+    @just --list
+
+# Show status across submodules in this bucket
+status:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bucket="$(basename "$PWD")"
+    gitmodules="$(git rev-parse --show-toplevel)/.gitmodules"
+    repos=$(git config --file "$gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | grep "^${bucket}/" | sed "s|^${bucket}/||" | sort || true)
+    if [ -z "$repos" ]; then
+        echo "No submodules registered in bucket: $bucket"
+        exit 0
+    fi
+    printf "%-30s %-14s %-10s %s\n" "SUBMODULE" "BRANCH" "STATUS" "UPSTREAM"
+    for r in $repos; do
+        if [ ! -d "$r/.git" ] && [ ! -f "$r/.git" ]; then
+            printf "%-30s %-14s %-10s %s\n" "$bucket/$r" "-" "missing" "-"
+            continue
+        fi
+        branch=$(git -C "$r" branch --show-current 2>/dev/null || echo "detached")
+        [ -n "$(git -C "$r" status --porcelain 2>/dev/null)" ] && status="dirty" || status="clean"
+        upstream=$(git -C "$r" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo "")
+        if [ -n "$upstream" ]; then
+            counts=$(git -C "$r" rev-list --left-right --count HEAD..."$upstream" 2>/dev/null || echo "0 0")
+            ahead=$(echo "$counts" | awk '{print $1}')
+            behind=$(echo "$counts" | awk '{print $2}')
+            remote_info="+${ahead}/-${behind}"
+        else
+            remote_info="no-upstream"
+        fi
+        printf "%-30s %-14s %-10s %s\n" "$bucket/$r" "$branch" "$status" "$remote_info"
+    done
+
+# Run checks across submodules in this bucket
+check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bucket="$(basename "$PWD")"
+    gitmodules="$(git rev-parse --show-toplevel)/.gitmodules"
+    repos=$(git config --file "$gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | grep "^${bucket}/" | sed "s|^${bucket}/||" | sort || true)
+    if [ -z "$repos" ]; then
+        echo "No submodules registered in bucket: $bucket"
+        exit 0
+    fi
+    for r in $repos; do
+        jf="$r/justfile"
+        [ -f "$jf" ] || jf="$r/Justfile"
+        if [ -f "$jf" ]; then
+            echo "==> Checking $bucket/$r..."
+            if just -f "$jf" --summary | grep -qw "check"; then
+                just -f "$jf" check
+            elif just -f "$jf" --summary | grep -qw "lint"; then
+                just -f "$jf" lint
+            elif just -f "$jf" --summary | grep -qw "vet"; then
+                just -f "$jf" vet
+            fi
+        fi
+    done
+
+# Run unit tests across submodules in this bucket
+test:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bucket="$(basename "$PWD")"
+    gitmodules="$(git rev-parse --show-toplevel)/.gitmodules"
+    repos=$(git config --file "$gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | grep "^${bucket}/" | sed "s|^${bucket}/||" | sort || true)
+    if [ -z "$repos" ]; then
+        echo "No submodules registered in bucket: $bucket"
+        exit 0
+    fi
+    for r in $repos; do
+        jf="$r/justfile"
+        [ -f "$jf" ] || jf="$r/Justfile"
+        if [ -f "$jf" ]; then
+            echo "==> Testing $bucket/$r..."
+            just -f "$jf" test
+        fi
+    done
