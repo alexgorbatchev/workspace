@@ -13,19 +13,20 @@ mod? tui 'tui/justfile'
 mod? ui_design 'ui-design/justfile'
 mod? utils 'utils/justfile'
 
-# All catalog submodules dynamically discovered from .gitmodules
-
-repos := `git config --file .gitmodules --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | sort | tr '\n' ' '`
-
 default:
     @just --list
 
-# One-shot workspace initialization for fresh or existing clones
+# Initialize submodules with concurrent cloning (JOBS=8 by default)
 setup:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "==> Initializing and cloning submodules recursively..."
-    git submodule update --init --recursive
+    jobs="${JOBS:-8}"
+    if [[ ! "$jobs" =~ ^[1-9][0-9]*$ ]]; then
+        echo "JOBS must be a positive integer" >&2
+        exit 1
+    fi
+    echo "==> Initializing and cloning submodules recursively ($jobs workers)..."
+    git submodule update --init --recursive --jobs "$jobs"
     echo "==> Aligning submodules to tracking branches..."
     just align
     echo "==> Setup complete. Current workspace status:"
@@ -37,31 +38,27 @@ sync:
     set -euo pipefail
     source scripts/catalog.sh
     echo "==> Pulling root monorepo updates..."
-    catalog_command "$(catalog_label .)" git pull --ff-only || echo "Root has no upstream or cannot fast-forward; continuing..."
+    catalog_command "$(catalog_label .)" git pull --ff-only
     echo "==> Concurrently fetching and merging submodule tracking branches..."
     catalog_run sync
-    echo "==> Aligning branches..."
-    just align
     echo "==> Sync complete. Current workspace status:"
     just status
 
-# Align all submodules to checkout their tracking branch (avoids detached HEAD)
-align branch="main":
+# Align submodules concurrently to configured branches, or an explicit override
+[positional-arguments]
+align branch="":
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{ repos }}; do
-        [ -z "$r" ] && continue
-        if [ -d "$r/.git" ] || [ -f "$r/.git" ]; then
-            git -C "$r" checkout "{{ branch }}" -q 2>/dev/null || true
-        fi
-    done
-    echo "All active submodules aligned to '{{ branch }}'."
+    source scripts/catalog.sh
+    catalog_run align "$1"
+    echo "All active submodules aligned."
 
 # Add one or more repositories to the monorepo catalog (e.g. `just add utils/better-fonts-cli` or `just add tui/gio-lucide tui/go-tui`)
+[positional-arguments]
 add *paths:
     #!/usr/bin/env bash
     set -euo pipefail
-    for target_path in {{ paths }}; do
+    for target_path in "$@"; do
         repo_name="$(basename "$target_path")"
         target_url="https://github.com/alexgorbatchev/${repo_name}.git"
         target_branch="main"
@@ -70,19 +67,19 @@ add *paths:
         fi
         echo "==> Adding submodule $target_path from $target_url ($target_branch)..."
         git submodule add -b "$target_branch" "$target_url" "$target_path"
-        git -C "$target_path" checkout "$target_branch" -q 2>/dev/null || true
+        git -C "$target_path" switch -- "$target_branch"
     done
     just status
 
 # Safely unregister and delete a submodule without manual Git surgery
+[positional-arguments]
 remove path:
     #!/usr/bin/env bash
     set -euo pipefail
-    target_path="{{ path }}"
+    source scripts/catalog.sh
+    target_path="$1"
     echo "==> De-registering submodule $target_path..."
-    git submodule deinit -f "$target_path" 2>/dev/null || true
-    git rm -f "$target_path"
-    rm -rf ".git/modules/$target_path"
+    catalog_remove "$target_path"
     echo "==> Removed $target_path."
     just status
 
@@ -90,26 +87,9 @@ remove path:
 status:
     #!/usr/bin/env bash
     set -euo pipefail
+    source scripts/catalog.sh
     printf "%-32s %-14s %-10s %s\n" "SUBMODULE" "BRANCH" "STATUS" "UPSTREAM"
-    for r in {{ repos }}; do
-        [ -z "$r" ] && continue
-        if [ ! -d "$r/.git" ] && [ ! -f "$r/.git" ]; then
-            printf "%-32s %-14s %-10s %s\n" "$r" "-" "missing" "-"
-            continue
-        fi
-        branch=$(git -C "$r" branch --show-current 2>/dev/null || echo "detached")
-        [ -n "$(git -C "$r" status --porcelain 2>/dev/null)" ] && status="dirty" || status="clean"
-        upstream=$(git -C "$r" rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo "")
-        if [ -n "$upstream" ]; then
-            counts=$(git -C "$r" rev-list --left-right --count HEAD..."$upstream" 2>/dev/null || echo "0 0")
-            ahead=$(echo "$counts" | awk '{print $1}')
-            behind=$(echo "$counts" | awk '{print $2}')
-            remote_info="+${ahead}/-${behind}"
-        else
-            remote_info="no-upstream"
-        fi
-        printf "%-32s %-14s %-10s %s\n" "$r" "$branch" "$status" "$remote_info"
-    done
+    catalog_run status
 
 # Fetch all submodules concurrently with org/repo prefixes (JOBS=8 by default)
 fetch:
@@ -125,57 +105,27 @@ update:
     set -euo pipefail
     source scripts/catalog.sh
     catalog_run update
-    just align
 
 # Run checks across all buckets
 check:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{ repos }}; do
-        [ -z "$r" ] && continue
-        jf="$r/justfile"
-        [ -f "$jf" ] || jf="$r/Justfile"
-        if [ -f "$jf" ]; then
-            echo "==> Checking $r..."
-            if just -f "$jf" --summary | grep -qw "check"; then
-                just -f "$jf" check
-            elif just -f "$jf" --summary | grep -qw "lint"; then
-                just -f "$jf" lint
-            elif just -f "$jf" --summary | grep -qw "vet"; then
-                just -f "$jf" vet
-            fi
-        fi
-    done
+    source scripts/catalog.sh
+    catalog_run check
 
 # Run unit tests across all buckets
 test: test-catalog
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{ repos }}; do
-        [ -z "$r" ] && continue
-        jf="$r/justfile"
-        [ -f "$jf" ] || jf="$r/Justfile"
-        if [ -f "$jf" ]; then
-            echo "==> Testing $r..."
-            just -f "$jf" test
-        fi
-    done
+    source scripts/catalog.sh
+    catalog_run test
 
 # Clean build artifacts and temporary files across all submodules
 clean:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{ repos }}; do
-        [ -z "$r" ] && continue
-        jf="$r/justfile"
-        [ -f "$jf" ] || jf="$r/Justfile"
-        if [ -f "$jf" ]; then
-            if just -f "$jf" --summary | grep -qw "clean"; then
-                echo "==> Cleaning $r..."
-                just -f "$jf" clean
-            fi
-        fi
-    done
+    source scripts/catalog.sh
+    catalog_run clean
     echo "All submodules cleaned."
 
 # Run Git concurrently across submodules with org/repo prefixes (JOBS=8 by default)
@@ -188,7 +138,8 @@ git *args:
 
 # Test workspace orchestration against isolated local Git repositories
 test-catalog:
-    bash tests/catalog.sh
+    bash scripts/test-catalog.sh
+    bash scripts/test-failures.sh
 
 # Save submodule pointers with a fixed message and push root plus required member commits
 save:

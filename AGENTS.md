@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-18 09:53
-last_modified: 2026-10-19 20:57
+last_modified: 2026-10-20 09:54
 status: current
 ---
 
@@ -74,4 +74,5 @@ The **catalog** refers to the curated set of member repositories (applications, 
 - `.gitmodules`: Submodule tracking specifications and remote URLs
 - `justfile`: Workspace automation recipes and modular bucket declarations
 - `scripts/catalog.sh`: Concurrent member operations and pointer publication
-- `tests/catalog.sh`: Offline integration tests for command forwarding, concurrency, failures, and publication
+- `scripts/test-catalog.sh`: Offline integration tests for command forwarding, concurrency, failures, and publication
+- `scripts/test-failures.sh`: Offline integration tests for root and bucket failure propagation and catalog mutations

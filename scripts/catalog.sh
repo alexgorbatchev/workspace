@@ -2,8 +2,16 @@
 # Shared by the root recipes; xargs owns the bounded pool and waits for workers.
 
 catalog_label() {
-    local repo="$1" url parent owner
-    if ! url="$(git -C "$repo" remote get-url origin 2>/dev/null)"; then
+    local repo="$1" url parent owner result
+    if [ ! -e "$repo/.git" ]; then
+        printf '%s\n' "${repo#./}"
+        return
+    fi
+    if url="$(git -C "$repo" config --get remote.origin.url)"; then
+        :
+    else
+        result=$?
+        [ "$result" -eq 1 ] || return "$result"
         printf '%s\n' "${repo#./}"
         return
     fi
@@ -24,17 +32,57 @@ catalog_command() (
     done
 )
 
+catalog_branch() {
+    local repo="$1" entry key branch
+    while IFS= read -r -d '' entry; do
+        [ "${entry#*$'\n'}" = "$repo" ] || continue
+        key="${entry%%$'\n'*}"
+        if branch="$(git config --file .gitmodules --get "${key%.path}.branch")"; then
+            if [ "$branch" = . ]; then
+                git symbolic-ref --short HEAD
+            else
+                printf '%s\n' "$branch"
+            fi
+        else
+            [ "$?" -eq 1 ] || return 1
+            branch="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD)" || return
+            printf '%s\n' "${branch#origin/}"
+        fi
+        return
+    done < <(git config --file .gitmodules --null --get-regexp '^submodule\..*\.path$')
+    printf 'No catalog branch found for %s\n' "$repo" >&2
+    return 1
+}
+
 catalog_operation() {
-    local repo="$1" operation="$2"
+    local repo="$1" operation="$2" branch
     shift 2
     case "$operation" in
         git) git -C "$repo" "$@" ;;
         fetch) git -C "$repo" fetch --all --prune ;;
         update)
-            git -C "$repo" fetch --all --prune &&
+            catalog_operation "$repo" align "" &&
+                git -C "$repo" fetch --all --prune &&
                 git submodule update --remote --merge -- "$repo"
             ;;
-        sync) git submodule update --remote --merge -- "$repo" ;;
+        sync)
+            catalog_operation "$repo" align "" &&
+                git submodule update --remote --merge -- "$repo"
+            ;;
+        align)
+            branch="$1"
+            if [ -z "$branch" ]; then
+                branch="$(catalog_branch "$repo")" || return
+            fi
+            git -C "$repo" switch -- "$branch"
+            ;;
+        bucket-sync)
+            catalog_operation "$repo" align "" &&
+                git -C "$repo" fetch --all --prune &&
+                git -C "$repo" merge --ff-only '@{upstream}'
+            ;;
+        status) catalog_status "$repo" ;;
+        check|test|clean) catalog_task "$repo" "$operation" ;;
         *) printf 'Unknown catalog operation: %s\n' "$operation" >&2; return 1 ;;
     esac
 }
@@ -44,7 +92,7 @@ catalog_worker() {
     local repo="${!#}" label operation="$1" result
     set -- "${@:1:$#-1}"
     shift
-    label="$(catalog_label "$repo")"
+    label="$(catalog_label "$repo")" || return
     printf '[%s] starting %s\n' "$label" "$operation"
     if catalog_command "$label" catalog_operation "$repo" "$operation" "$@"; then
         printf '[%s] done\n' "$label"
@@ -56,18 +104,26 @@ catalog_worker() {
     fi
 }
 
-catalog_paths() {
+catalog_paths() (
+    set -o pipefail
     local entry repo
+    if [ ! -f .gitmodules ]; then
+        printf 'Missing catalog: .gitmodules\n' >&2
+        return 1
+    fi
     # Git's NUL format separates each key and value with a newline.
     { git config --file .gitmodules --null --get-regexp '^submodule\..*\.path$' ||
         [ "$?" -eq 1 ]; } |
         while IFS= read -r -d '' entry; do
             repo="${entry#*$'\n'}"
-            if [ -f "$repo/.git" ] || [ -d "$repo/.git" ]; then
+            if [ -n "${CATALOG_BUCKET:-}" ] && [[ "$repo" != "$CATALOG_BUCKET/"* ]]; then
+                continue
+            fi
+            if [ "${1:-}" = all ] || [ -f "$repo/.git" ] || [ -d "$repo/.git" ]; then
                 printf '%s\0' "$repo"
             fi
         done
-}
+)
 
 catalog_run() (
     set -o pipefail
@@ -76,17 +132,91 @@ catalog_run() (
         printf 'JOBS must be a positive integer\n' >&2
         exit 1
     fi
-    export -f catalog_label catalog_command catalog_operation catalog_worker
-    catalog_paths | xargs -0 -r -n 1 -P "$jobs" bash -c 'catalog_worker "$@"' _ "$@"
+    paths_mode=initialized
+    case "$1" in status|check|test|clean) paths_mode=all ;; esac
+    export -f catalog_label catalog_command catalog_branch catalog_operation catalog_worker catalog_status catalog_task
+    catalog_paths "$paths_mode" | xargs -0 -r -n 1 -P "$jobs" bash -c 'catalog_worker "$@"' _ "$@"
 )
 
-catalog_save() {
-    local entry repo metadata recorded current state
+catalog_status() {
+    local repo="$1" branch state upstream counts ahead behind remote_info
+    if [ ! -e "$repo/.git" ]; then
+        printf '%-32s %-14s %-10s %s\n' "$repo" - missing -
+        return
+    fi
+    branch="$(git -C "$repo" branch --show-current)" || return
+    state="$(git -C "$repo" status --porcelain)" || return
+    upstream=""
+    if [ -n "$branch" ]; then
+        upstream="$(git -C "$repo" for-each-ref --format='%(upstream:short)' "refs/heads/$branch")" || return
+    fi
+    remote_info=no-upstream
+    if [ -n "$upstream" ]; then
+        counts="$(git -C "$repo" rev-list --left-right --count "HEAD...$upstream")" || return
+        read -r ahead behind <<< "$counts"
+        remote_info="+$ahead/-$behind"
+    fi
+    if [ -n "$state" ]; then state=dirty; else state=clean; fi
+    printf '%-32s %-14s %-10s %s\n' "$repo" "${branch:-detached}" "$state" "$remote_info"
+}
+
+catalog_task() {
+    local repo="$1" operation="$2" jf summary task
+    jf="$repo/justfile"
+    [ -f "$jf" ] || jf="$repo/Justfile"
+    [ -f "$jf" ] || return 0
+    summary="$(just -f "$jf" --summary)" || return
+    case "$operation" in
+        check)
+            for task in check lint vet; do
+                if [[ " $summary " =~ [[:space:]]$task[[:space:]] ]]; then
+                    just -f "$jf" "$task"
+                    return
+                fi
+            done
+            ;;
+        clean)
+            if [[ " $summary " =~ [[:space:]]clean[[:space:]] ]]; then
+                just -f "$jf" clean
+                return
+            fi
+            ;;
+        test) just -f "$jf" test; return ;;
+    esac
+    return 0
+}
+
+catalog_remove() {
+    local repo="$1"
+    # Validate the exact gitlink before passing a path to destructive commands.
+    if ! git --literal-pathspecs ls-files --stage -z -- "$repo" |
+        (IFS= read -r -d '' entry &&
+            [ "${entry%% *}" = 160000 ] && [ "${entry#*$'\t'}" = "$repo" ]); then
+        printf 'Not a catalog submodule: %s\n' "$repo" >&2
+        return 1
+    fi
+    if [ -e "$repo/.git" ]; then
+        git -C "$repo" rev-parse --git-dir >/dev/null || return
+    fi
+    git --literal-pathspecs submodule deinit -f -- "$repo" || return
+    git --literal-pathspecs rm -f -- "$repo"
+}
+
+catalog_save() (
+    local entry repo metadata recorded current state snapshot result label
     local paths=()
-    if ! git diff --cached --quiet; then
+    if git diff --cached --quiet; then
+        :
+    else
+        result=$?
+        [ "$result" -eq 1 ] || return "$result"
         printf 'Already staged changes; finish that commit before running just save.\n' >&2
         return 1
     fi
+    mkdir -p .tmp || return
+    snapshot="$(mktemp .tmp/catalog-index.XXXXXX)" || return
+    trap 'rm -f "$snapshot"' EXIT
+    git ls-files --stage -z > "$snapshot" || return
     while IFS= read -r -d '' entry; do
         [ "${entry%% *}" = 160000 ] || continue
         repo="${entry#*$'\t'}"
@@ -107,12 +237,13 @@ catalog_save() {
             return 1
         fi
         paths+=("$repo")
-    done < <(git ls-files --stage -z)
+    done < "$snapshot"
     if [ "${#paths[@]}" -eq 0 ]; then
         printf 'Submodule pointers are already saved.\n'
     else
         # Commit only gitlinks; root file edits and untracked files stay untouched.
         git --literal-pathspecs commit --only -m 'chore: update submodule pointers' -- "${paths[@]}" || return
     fi
-    catalog_command "$(catalog_label .)" git push --recurse-submodules=on-demand
-}
+    label="$(catalog_label .)" || return
+    catalog_command "$label" git push --recurse-submodules=on-demand
+)
