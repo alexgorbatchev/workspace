@@ -14,6 +14,7 @@ mod? ui_design 'ui-design/justfile'
 mod? utils 'utils/justfile'
 
 # All catalog submodules dynamically discovered from .gitmodules
+
 repos := `git config --file .gitmodules --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}' | sort | tr '\n' ' '`
 
 default:
@@ -30,14 +31,15 @@ setup:
     echo "==> Setup complete. Current workspace status:"
     just status
 
-# Full synchronization: pull root, fetch remotes, merge tracking branches, and verify status
+# Pull root, sync submodules concurrently with org/repo prefixes, and show status (JOBS=8)
 sync:
     #!/usr/bin/env bash
     set -euo pipefail
+    source scripts/catalog.sh
     echo "==> Pulling root monorepo updates..."
-    git pull --ff-only 2>/dev/null || echo "Root has no upstream or cannot fast-forward; continuing..."
+    catalog_command "$(catalog_label .)" git pull --ff-only || echo "Root has no upstream or cannot fast-forward; continuing..."
     echo "==> Concurrently fetching and merging submodule tracking branches..."
-    git submodule update --remote --merge
+    catalog_run sync
     echo "==> Aligning branches..."
     just align
     echo "==> Sync complete. Current workspace status:"
@@ -109,24 +111,20 @@ status:
         printf "%-32s %-14s %-10s %s\n" "$r" "$branch" "$status" "$remote_info"
     done
 
-# Fetch updates for all submodules in parallel
+# Fetch all submodules concurrently with org/repo prefixes (JOBS=8 by default)
 fetch:
     #!/usr/bin/env bash
     set -euo pipefail
-    for r in {{ repos }}; do
-        [ -z "$r" ] && continue
-        if [ -d "$r" ]; then
-            git -C "$r" fetch --all --prune -q 2>/dev/null &
-        fi
-    done
-    wait
+    source scripts/catalog.sh
+    catalog_run fetch
     echo "All submodules fetched."
 
-# Update all submodules from their tracking branches
-update: fetch
+# Update submodules concurrently from their tracking branches (JOBS=8 by default)
+update:
     #!/usr/bin/env bash
     set -euo pipefail
-    git submodule update --remote --merge
+    source scripts/catalog.sh
+    catalog_run update
     just align
 
 # Run checks across all buckets
@@ -150,7 +148,7 @@ check:
     done
 
 # Run unit tests across all buckets
-test:
+test: test-catalog
     #!/usr/bin/env bash
     set -euo pipefail
     for r in {{ repos }}; do
@@ -180,6 +178,21 @@ clean:
     done
     echo "All submodules cleaned."
 
-# Run arbitrary git command across all submodules
+# Run Git concurrently across submodules with org/repo prefixes (JOBS=8 by default)
+[positional-arguments]
 git *args:
-    git submodule foreach 'git {{ args }}'
+    #!/usr/bin/env bash
+    set -euo pipefail
+    source scripts/catalog.sh
+    catalog_run git "$@"
+
+# Test workspace orchestration against isolated local Git repositories
+test-catalog:
+    bash tests/catalog.sh
+
+# Save submodule pointers with a fixed message and push root plus required member commits
+save:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    source scripts/catalog.sh
+    catalog_save
