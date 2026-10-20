@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-18 13:40
-last_modified: 2026-10-18 14:05
+last_modified: 2026-10-19 21:22
 status: current
 ---
 
@@ -20,6 +20,7 @@ Inherits all standing workspace boundaries, code coverage requirements (90%), an
 - `engine-cli/` -> Engine DJ collection database (`m.db`) inspection, playlist sync, and artwork cache repair
 - `engine-dj-app/` -> Engine DJ desktop application inspection and binary bridge
 - `engine-stem-cli/` -> Engine DJ stem container inspection, decryption, and multi-channel stem extraction
+- `engine-ui/` -> Local web UI for managing Engine DJ collections through the sibling `engine-cli` HTTP API
 - `fetch-mix-cli/` -> DJ mix tracklist parser and set-level batch audio acquisition orchestrator
 - `fetch-track-cli/` -> High-fidelity single-track acquisition engine with Goertzel frequency verification
 - `gochromaprint/` -> Pure Go port of Chromaprint audio fingerprinting library (AcoustID)

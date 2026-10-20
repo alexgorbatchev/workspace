@@ -254,3 +254,7 @@
 	path = ai/tools/youtube-captions-dl
 	url = https://github.com/alexgorbatchev/youtube-captions-dl.git
 	branch = main
+[submodule "dj/engine-ui"]
+	path = dj/engine-ui
+	url = https://github.com/alexgorbatchev/engine-ui.git
+	branch = main
