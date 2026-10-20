@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-18 09:53
-last_modified: 2026-10-20 13:00
+last_modified: 2026-10-20 14:02
 status: current
 ---
 
@@ -13,6 +13,7 @@ The **catalog** refers to the curated set of member repositories (applications, 
 ## Shared commands
 - Initial workspace setup: `just setup`
 - Full synchronization: `just sync`
+- Commit member changes and their root pointers locally in one sweep: `just commit "<message>"`
 - Save and publish changed submodule pointers: `just save` (fixed message: `chore: update submodule pointers`)
 - Align all tracking branches: `just align [branch]`
 - Add member repositories: `just add <paths...>` (GitHub SSH URLs inferred from repository names)
@@ -37,6 +38,7 @@ The **catalog** refers to the curated set of member repositories (applications, 
 - Preserve literal Git arguments when forwarding through `just git`; do not interpolate them into shell command text.
 - Collect worker failures and return a nonzero exit after remaining jobs finish; do not suppress fetch or merge failures.
 - Use `just save` for routine pointer updates. It commits only changed gitlinks, leaves other root edits untouched, and requires changed members to be clean and on tracking branches. Finish already staged root changes separately.
+- Use `just commit "<message>"` for bulk member edits. It includes tracked and untracked member changes, checks affected repositories before committing, and commits their gitlinks afterward. Existing staged changes must be finished first. Root source edits remain untouched and nothing is pushed. A failed member commit preserves completed commits and withholds root pointers; finish the failed member commit before retrying.
 - Keep the pointer commit message fixed. `just save` pushes the root with `--recurse-submodules=on-demand`, publishing required member commits first. The root needs a configured push destination. A repeated invocation retries publication without creating an empty commit.
 
 ## Category map (Buckets)
@@ -67,6 +69,7 @@ The **catalog** refers to the curated set of member repositories (applications, 
 - Never: record task history, progress, handoffs, or dated user amendments in `AGENTS.md`
 - Always (code-based projects only): any time code is changed such that results from running that code are changed, a test file must be changed as well; 90% code coverage is required (scripts/ folder is excluded from this rule)
 - Always: verify submodules remain on clean tracking branches before updating pointers
+- Always: provide `just setup` in every catalog project to prepare development dependencies. Runnable projects expose `just run`, including development stacks. When a project has both a development stack and a CLI, expose the stack as `just run` and the CLI as `just cli`. Libraries without an executable entrypoint need only `setup`.
 - Ask first: adding new submodules, removing existing submodules, or changing upstream tracking URLs in `.gitmodules`
 - Never: publish releases, tags, packages, or production deployments automatically without explicit user authorization
 - Never: commit or push private internal domains or hostnames to repositories hosted on `github.com`
@@ -79,3 +82,4 @@ The **catalog** refers to the curated set of member repositories (applications, 
 - `scripts/test-catalog.sh`: Offline integration tests for command forwarding, concurrency, failures, and publication
 - `scripts/test-failures.sh`: Offline integration tests for root and bucket failure propagation and catalog mutations
 - `scripts/test-sync-branches.sh`: Offline integration tests for branch discovery, pruning, and remote fetch failures
+- `scripts/test-commit.sh`: Offline integration tests for bulk member commits, preflight checks, and root pointer preservation

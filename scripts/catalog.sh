@@ -234,6 +234,108 @@ catalog_remove() {
     git --literal-pathspecs rm -f -- "$repo"
 }
 
+catalog_commit_preflight() (
+    local repo="$1" message="$2" index remote url snapshot urls result
+    shift 2
+    git -C "$repo" diff --cached --quiet || {
+        printf '[%s] already has staged changes; finish that commit first.\n' "$repo" >&2
+        return 1
+    }
+    index="$(git -C "$repo" rev-parse --path-format=absolute --git-path index)" || return
+    if [ -e "$index.lock" ]; then
+        printf '[%s] index is locked; leave the owning Git operation to finish.\n' "$repo" >&2
+        return 1
+    fi
+    # Build the prospective index separately. Preflight never stages real files.
+    snapshot="$(mktemp "$PWD/.tmp/commit-index.XXXXXX")" || return
+    rm "$snapshot" || return
+    trap 'rm -f "$snapshot" "$snapshot.lock" "$snapshot.diff" "$snapshot.scan"' EXIT
+    export GIT_INDEX_FILE="$snapshot"
+    git -C "$repo" read-tree HEAD || return
+    if [ "$#" -eq 0 ]; then
+        git -C "$repo" add --all || return
+    else
+        git --literal-pathspecs -C "$repo" add -- "$@" || return
+    fi
+    printf '%s\n' "$message" > "$snapshot.scan" || return
+    git -C "$repo" diff --cached --text --no-ext-diff --no-textconv --unified=0 HEAD -- > "$snapshot.diff" || return
+    sed -n '/^+++ /d; /^+/p' "$snapshot.diff" >> "$snapshot.scan" || return
+    remote="$(git -C "$repo" remote)" || return
+    while IFS= read -r remote; do
+        [ -n "$remote" ] || continue
+        urls="$(git -C "$repo" remote get-url --all "$remote")" || return
+        urls+=$'\n'"$(git -C "$repo" remote get-url --push --all "$remote")" || return
+        while IFS= read -r url; do
+        case "$url" in
+            git@github.com:*|ssh://git@github.com/*|https://github.com/*|http://github.com/*)
+                if LC_ALL=C grep -Ei '(^|[^[:alnum:]_-])([[:alnum:]_-]+\.)+(cvb|zxc)\.lol([^[:alnum:]_-]|$)' "$snapshot.scan" >/dev/null; then
+                    printf '[%s] prospective GitHub commit contains a private internal domain.\n' "$repo" >&2
+                    return 1
+                else
+                    result=$?
+                    [ "$result" -eq 1 ] || return "$result"
+                fi
+                ;;
+        esac
+        done <<< "$urls"
+    done <<< "$remote"
+)
+
+catalog_commit() (
+    set -euo pipefail
+    local message="$1" entry repo metadata recorded current state snapshot
+    local paths=() dirty=()
+    if [[ ! "$message" =~ [^[:space:]] ]]; then
+        printf 'Commit message must not be empty.\n' >&2
+        return 1
+    fi
+    if ! git diff --cached --quiet; then
+        printf 'Root already has staged changes; finish that commit first.\n' >&2
+        return 1
+    fi
+    mkdir -p .tmp
+    snapshot="$(mktemp .tmp/commit-members.XXXXXX)"
+    trap 'rm -f "$snapshot"' EXIT
+    git ls-files --stage -z > "$snapshot"
+    # Validate every affected member before committing any of them.
+    while IFS= read -r -d '' entry; do
+        [ "${entry%% *}" = 160000 ] || continue
+        repo="${entry#*$'\t'}"
+        [ -e "$repo/.git" ] || continue
+        metadata="${entry%%$'\t'*}"
+        recorded="${metadata#* }"
+        recorded="${recorded%% *}"
+        current="$(git -C "$repo" rev-parse HEAD)"
+        state="$(git -C "$repo" status --porcelain --untracked-files=normal)"
+        if [ "$current" = "$recorded" ] && [ -z "$state" ]; then
+            continue
+        fi
+        if ! git -C "$repo" symbolic-ref -q HEAD >/dev/null ||
+            ! git -C "$repo" rev-parse --verify '@{upstream}' >/dev/null 2>&1; then
+            printf '[%s] must be on a tracking branch before bulk commit.\n' "$repo" >&2
+            return 1
+        fi
+        catalog_commit_preflight "$repo" "$message"
+        paths+=("$repo")
+        [ -z "$state" ] || dirty+=("$repo")
+    done < "$snapshot"
+    if [ "${#paths[@]}" -eq 0 ]; then
+        printf 'No member changes or pointers to commit.\n'
+        return
+    fi
+    catalog_commit_preflight . "$message" "${paths[@]}"
+    for repo in "${dirty[@]}"; do
+        catalog_command "$(catalog_label "$repo")" git -C "$repo" add --all
+        catalog_command "$(catalog_label "$repo")" git -C "$repo" commit -m "$message"
+        if [ -n "$(git -C "$repo" status --porcelain)" ]; then
+            printf '[%s] still has changes after committing; root pointers were not committed.\n' "$repo" >&2
+            return 1
+        fi
+    done
+    # Root source edits remain untouched; this commit records only member gitlinks.
+    git --literal-pathspecs commit --only -m "$message" -- "${paths[@]}"
+)
+
 catalog_save() (
     local entry repo metadata recorded current state snapshot result label
     local paths=()

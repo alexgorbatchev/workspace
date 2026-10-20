@@ -142,6 +142,15 @@ test-catalog:
     bash scripts/test-catalog.sh
     bash scripts/test-failures.sh
     bash scripts/test-sync-branches.sh
+    bash scripts/test-commit.sh
+
+# Commit changed members, then their root pointers, without publishing
+[positional-arguments]
+commit message:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    source scripts/catalog.sh
+    catalog_commit "$1"
 
 # Save submodule pointers with a fixed message and push root plus required member commits
 save:

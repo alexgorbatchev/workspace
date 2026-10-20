@@ -45,6 +45,14 @@ Synchronize the workspace (fetches every branch from each remote, pulls root upd
 just sync
 ```
 
+Commit changes across member repositories and record their updated pointers locally in one sweep:
+
+```bash
+just commit "chore: standardize project setup"
+```
+
+The command includes tracked and untracked member changes, requires affected members to be on tracking branches, and refuses existing staged work. It leaves root source edits untouched. All affected repositories are checked before the first commit. If a member commit fails, completed commits remain and root pointers are withheld; finish the failed member commit, then rerun the command. Use `just save` to publish the recorded pointers and required member commits.
+
 Inspect status or run checks for a specific category:
 
 ```bash
@@ -92,6 +100,8 @@ just go_libs check
 | :--- | :--- |
 | `just setup` | One-shot workspace setup: recursively initializes submodules, aligns tracking branches, and displays status |
 | `just sync` | Fetches all remote branches for root and initialized members, pulls root updates, aligns members, and merges their tracking branches |
+| `just commit "<message>"` | Commits changed members and their root pointers locally in one sweep; leaves root source edits untouched |
+| `just save` | Records clean tracking member pointers with a fixed message and pushes root plus required member commits |
 | `just status` | Displays current branch, clean/dirty working tree status, and upstream ahead/behind counts for all submodules |
 | `just <bucket> status` | Displays status scoped to a specific category bucket (e.g. `just dj status`, `just go_libs status`) |
 | `just align [branch]` | Aligns all submodules to checkout their tracking branch (defaults to `main`), preventing detached HEADs |
