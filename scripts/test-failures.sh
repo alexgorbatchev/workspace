@@ -97,11 +97,11 @@ cp -R "$root/scripts" "$workspace/scripts"
 git clone -q --bare "$fixture/origin" "$fixture/org/new.git"
 cd "$workspace"
 git init -q -b main
-git config "url.$fixture/org/.insteadOf" https://github.com/alexgorbatchev/
+git config "url.$fixture/org/.insteadOf" git@github.com:alexgorbatchev/
 git commit -q --allow-empty -m initial
 export GIT_CONFIG_COUNT=1
 export GIT_CONFIG_KEY_0="url.$fixture/org/.insteadOf"
-export GIT_CONFIG_VALUE_0=https://github.com/alexgorbatchev/
+export GIT_CONFIG_VALUE_0=git@github.com:alexgorbatchev/
 just add 'members with spaces/new' > "$fixture/output" 2>&1
 [ "$(git -C 'members with spaces/new' symbolic-ref --short HEAD)" = main ]
 just remove 'members with spaces/new' > "$fixture/output" 2>&1

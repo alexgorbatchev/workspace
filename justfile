@@ -60,7 +60,7 @@ add *paths:
     set -euo pipefail
     for target_path in "$@"; do
         repo_name="$(basename "$target_path")"
-        target_url="https://github.com/alexgorbatchev/${repo_name}.git"
+        target_url="git@github.com:alexgorbatchev/${repo_name}.git"
         target_branch="main"
         if [ "$repo_name" = "commute-dashboard" ]; then
             target_branch="ccr-91413bd0-wc5mq4"
