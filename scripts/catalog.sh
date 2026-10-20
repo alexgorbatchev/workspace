@@ -54,6 +54,21 @@ catalog_branch() {
     return 1
 }
 
+catalog_fetch_all_branches() {
+    local repo="$1" remotes remote result=0
+    remotes="$(git -C "$repo" remote)" || return
+    while IFS= read -r remote; do
+        [ -n "$remote" ] || continue
+        if git -C "$repo" remote set-branches "$remote" '*' &&
+            git -C "$repo" fetch --prune -- "$remote"; then
+            :
+        else
+            result=1
+        fi
+    done <<< "$remotes"
+    return "$result"
+}
+
 catalog_operation() {
     local repo="$1" operation="$2" branch
     shift 2
@@ -66,8 +81,9 @@ catalog_operation() {
                 git submodule update --remote --merge -- "$repo"
             ;;
         sync)
-            catalog_operation "$repo" align "" &&
-                git submodule update --remote --merge -- "$repo"
+            catalog_fetch_all_branches "$repo" &&
+                catalog_operation "$repo" align "" &&
+                git submodule update --remote --no-fetch --merge -- "$repo"
             ;;
         align)
             branch="$1"
@@ -77,8 +93,8 @@ catalog_operation() {
             git -C "$repo" switch -- "$branch"
             ;;
         bucket-sync)
-            catalog_operation "$repo" align "" &&
-                git -C "$repo" fetch --all --prune &&
+            catalog_fetch_all_branches "$repo" &&
+                catalog_operation "$repo" align "" &&
                 git -C "$repo" merge --ff-only '@{upstream}'
             ;;
         status) catalog_status "$repo" ;;
@@ -134,7 +150,7 @@ catalog_run() (
     fi
     paths_mode=initialized
     case "$1" in status|check|test|clean) paths_mode=all ;; esac
-    export -f catalog_label catalog_command catalog_branch catalog_operation catalog_worker catalog_status catalog_task
+    export -f catalog_label catalog_command catalog_branch catalog_fetch_all_branches catalog_operation catalog_worker catalog_status catalog_task
     catalog_paths "$paths_mode" | xargs -0 -r -n 1 -P "$jobs" bash -c 'catalog_worker "$@"' _ "$@"
 )
 

@@ -32,11 +32,13 @@ setup:
     echo "==> Setup complete. Current workspace status:"
     just status
 
-# Pull root, sync submodules concurrently with org/repo prefixes, and show status (JOBS=8)
+# Fetch all remote branches, pull root, and sync submodules concurrently (JOBS=8)
 sync:
     #!/usr/bin/env bash
     set -euo pipefail
     source scripts/catalog.sh
+    echo "==> Fetching all root remote branches..."
+    catalog_command "$(catalog_label .)" catalog_fetch_all_branches .
     echo "==> Pulling root monorepo updates..."
     catalog_command "$(catalog_label .)" git pull --ff-only
     echo "==> Concurrently fetching and merging submodule tracking branches..."
@@ -140,6 +142,7 @@ git *args:
 test-catalog:
     bash scripts/test-catalog.sh
     bash scripts/test-failures.sh
+    bash scripts/test-sync-branches.sh
 
 # Save submodule pointers with a fixed message and push root plus required member commits
 save:
