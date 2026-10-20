@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-18 09:53
-last_modified: 2026-10-19 20:54
+last_modified: 2026-10-19 20:57
 status: current
 ---
 
@@ -68,6 +68,7 @@ The **catalog** refers to the curated set of member repositories (applications, 
 - Ask first: adding new submodules, removing existing submodules, or changing upstream tracking URLs in `.gitmodules`
 - Never: publish releases, tags, packages, or production deployments automatically without explicit user authorization
 - Never: commit or push private internal domains or hostnames to repositories hosted on `github.com`
+- Never: add private client repositories to the public workspace catalog
 
 ## References
 - `.gitmodules`: Submodule tracking specifications and remote URLs
