@@ -258,6 +258,49 @@ assert_output '[org/alpha] ## main'
 assert_output '[org/beta] ## main'
 printf 'PASS prefixes\n'
 
+# Status is one aligned row per member, including long names and missing clones.
+(
+git clone -q --recurse-submodules . "$fixture/status-workspace"
+cp "$root/justfile" "$fixture/status-workspace/justfile"
+cp -R "$root/scripts" "$fixture/status-workspace/scripts"
+cd "$fixture/status-workspace"
+long_path='members/a repository name longer than thirty two columns'
+git mv members/alpha "$long_path"
+git -C "$long_path" switch -qc feature/a-branch-longer-than-fourteen-columns
+git -C members/beta switch -q main
+printf 'dirty\n' > "$long_path/untracked"
+git config --file .gitmodules submodule.missing.path members/missing
+git config --file .gitmodules submodule.missing.url "$fixture/org/missing"
+for scope in root bucket; do
+    if [ "$scope" = root ]; then
+        just status > "$fixture/output" 2>&1
+    else
+        mkdir -p members
+        (cd members && bash ../scripts/bucket.sh status) > "$fixture/output" 2>&1
+    fi
+    if rg 'starting status|\] done$' "$fixture/output"; then
+        printf 'Status includes worker lifecycle messages\n' >&2
+        exit 1
+    fi
+    awk '
+        /^SUBMODULE / { next }
+        /members\// {
+            rows++
+            if (!match($0, /  (feature\/[^ ]+|main|-)  +/)) exit 1
+            branch_column = RSTART + 2
+            if (!match($0, /  (dirty|clean|missing)  +/)) exit 1
+            state_column = RSTART + 2
+            if (!match($0, /  (no-upstream|\+0\/-0|-)$/)) exit 1
+            upstream_column = RSTART + 2
+            if (rows > 1 && (branch_column != branch_start || state_column != state_start || upstream_column != upstream_start)) exit 1
+            branch_start = branch_column; state_start = state_column; upstream_start = upstream_column
+        }
+        END { if (rows != 3) exit 1 }
+    ' "$fixture/output"
+done
+)
+printf 'PASS root and bucket status rows and column alignment\n'
+
 # Each real Git alias waits for the other repository to start. A sequential
 # runner cannot pass this barrier, regardless of machine speed.
 export CATALOG_BARRIER="$fixture/barrier"

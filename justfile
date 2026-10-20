@@ -90,7 +90,6 @@ status:
     #!/usr/bin/env bash
     set -euo pipefail
     source scripts/catalog.sh
-    printf "%-32s %-14s %-10s %s\n" "SUBMODULE" "BRANCH" "STATUS" "UPSTREAM"
     catalog_run status
 
 # Fetch all submodules concurrently with org/repo prefixes (JOBS=8 by default)

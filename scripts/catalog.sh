@@ -108,6 +108,15 @@ catalog_worker() {
     local repo="${!#}" label operation="$1" result
     set -- "${@:1:$#-1}"
     shift
+    if [ "$operation" = status ]; then
+        if catalog_status "$repo"; then
+            return 0
+        else
+            result=$?
+            printf '[%s] status failed (exit %s)\n' "$repo" "$result" >&2
+            return 1
+        fi
+    fi
     label="$(catalog_label "$repo")" || return
     printf '[%s] starting %s\n' "$label" "$operation"
     if catalog_command "$label" catalog_operation "$repo" "$operation" "$@"; then
@@ -151,13 +160,20 @@ catalog_run() (
     paths_mode=initialized
     case "$1" in status|check|test|clean) paths_mode=all ;; esac
     export -f catalog_label catalog_command catalog_branch catalog_fetch_all_branches catalog_operation catalog_worker catalog_status catalog_task
-    catalog_paths "$paths_mode" | xargs -0 -r -n 1 -P "$jobs" bash -c 'catalog_worker "$@"' _ "$@"
+    if [ "$1" = status ]; then
+        {
+            printf 'SUBMODULE\tBRANCH\tSTATUS\tUPSTREAM\n'
+            catalog_paths "$paths_mode" | xargs -0 -r -n 1 -P "$jobs" bash -c 'catalog_worker "$@"' _ "$@"
+        } | column -t -s $'\t'
+    else
+        catalog_paths "$paths_mode" | xargs -0 -r -n 1 -P "$jobs" bash -c 'catalog_worker "$@"' _ "$@"
+    fi
 )
 
 catalog_status() {
     local repo="$1" branch state upstream counts ahead behind remote_info
     if [ ! -e "$repo/.git" ]; then
-        printf '%-32s %-14s %-10s %s\n' "$repo" - missing -
+        printf '%s\t%s\t%s\t%s\n' "$repo" - missing -
         return
     fi
     branch="$(git -C "$repo" branch --show-current)" || return
@@ -173,7 +189,7 @@ catalog_status() {
         remote_info="+$ahead/-$behind"
     fi
     if [ -n "$state" ]; then state=dirty; else state=clean; fi
-    printf '%-32s %-14s %-10s %s\n' "$repo" "${branch:-detached}" "$state" "$remote_info"
+    printf '%s\t%s\t%s\t%s\n' "$repo" "${branch:-detached}" "$state" "$remote_info"
 }
 
 catalog_task() {
