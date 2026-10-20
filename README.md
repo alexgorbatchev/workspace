@@ -18,14 +18,16 @@
 
 - [Git](https://git-scm.com/) (version 2.30 or newer)
 - [Just](https://github.com/casey/just) command runner
+- `column` (util-linux) for status table formatting
+- SSH access to the catalog repositories on GitHub
 
 # Installation & Setup
 
 Clone the repository and run `just setup` to initialize, clone, and align all submodules in one command:
 
 ```bash
-git clone https://github.com/alexgorbatchev/dj-cli.git monorepo
-cd monorepo
+git clone git@github.com:alexgorbatchev/workspace.git workspace
+cd workspace
 just setup
 ```
 
@@ -37,7 +39,7 @@ Inspect the current status of all submodules across the workspace:
 just status
 ```
 
-Synchronize the entire workspace (fetches root and fast-forwards all submodules to their remote tracking branches):
+Synchronize the workspace (fetches every branch from each remote, pulls root updates, aligns initialized members to their configured branches, and merges their upstream changes):
 
 ```bash
 just sync
@@ -57,7 +59,9 @@ Add a new repository to a category bucket:
 just add utils/better-fonts-cli
 ```
 
-Sample Output (`just status`):
+Status prints one row per catalog member, with columns sized to the displayed paths and branch names. Bucket status uses the same table format.
+
+Sample output (`just status`):
 ```text
 SUBMODULE                        BRANCH         STATUS     UPSTREAM
 dj/engine-cli                    main           clean      +0/-0
@@ -87,11 +91,11 @@ just go_libs check
 | Command | Description |
 | :--- | :--- |
 | `just setup` | One-shot workspace setup: recursively initializes submodules, aligns tracking branches, and displays status |
-| `just sync` | Full synchronization: pulls root updates, concurrently fetches submodules, merges tracking branches, and aligns |
+| `just sync` | Fetches all remote branches for root and initialized members, pulls root updates, aligns members, and merges their tracking branches |
 | `just status` | Displays current branch, clean/dirty working tree status, and upstream ahead/behind counts for all submodules |
 | `just <bucket> status` | Displays status scoped to a specific category bucket (e.g. `just dj status`, `just go_libs status`) |
 | `just align [branch]` | Aligns all submodules to checkout their tracking branch (defaults to `main`), preventing detached HEADs |
-| `just add <path> [url]` | Adds and registers a new repository as a submodule (defaults URL to `https://github.com/alexgorbatchev/<name>.git`) |
+| `just add <paths...>` | Adds repositories as submodules using `git@github.com:alexgorbatchev/<name>.git` |
 | `just remove <path>` | Safely unregisters and removes a submodule from `.gitmodules` and Git index |
 | `just fetch` | Concurrently fetches remote updates across all submodules without modifying working directories |
 | `just update` | Fetches remotes and merges upstream tracking changes into each submodule |

@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-18 09:53
-last_modified: 2026-10-20 09:54
+last_modified: 2026-10-20 13:00
 status: current
 ---
 
@@ -15,7 +15,7 @@ The **catalog** refers to the curated set of member repositories (applications, 
 - Full synchronization: `just sync`
 - Save and publish changed submodule pointers: `just save` (fixed message: `chore: update submodule pointers`)
 - Align all tracking branches: `just align [branch]`
-- Add member repository: `just add <path> [url] [branch]`
+- Add member repositories: `just add <paths...>` (GitHub SSH URLs inferred from repository names)
 - Remove member repository: `just remove <path>`
 - Clean build artifacts across submodules: `just clean`
 - Status overview across all buckets: `just status`
@@ -32,6 +32,8 @@ The **catalog** refers to the curated set of member repositories (applications, 
 
 ## Catalog operations
 - Root `git`, `fetch`, `update`, and `sync` recipes run member operations concurrently, with `[org/repo]` output prefixes. Set `JOBS` to a positive integer to override the default of eight workers, for example `JOBS=16 just fetch`.
+- `sync` fetches every branch from every configured remote for root and initialized members, including remotes excluded from `fetch --all`, and prunes stale remote branches. Run `just setup` to initialize missing members first.
+- Status uses one row per catalog member with shared column widths and no worker lifecycle messages. The `column` utility is required for formatting.
 - Preserve literal Git arguments when forwarding through `just git`; do not interpolate them into shell command text.
 - Collect worker failures and return a nonzero exit after remaining jobs finish; do not suppress fetch or merge failures.
 - Use `just save` for routine pointer updates. It commits only changed gitlinks, leaves other root edits untouched, and requires changed members to be clean and on tracking branches. Finish already staged root changes separately.
@@ -76,3 +78,4 @@ The **catalog** refers to the curated set of member repositories (applications, 
 - `scripts/catalog.sh`: Concurrent member operations and pointer publication
 - `scripts/test-catalog.sh`: Offline integration tests for command forwarding, concurrency, failures, and publication
 - `scripts/test-failures.sh`: Offline integration tests for root and bucket failure propagation and catalog mutations
+- `scripts/test-sync-branches.sh`: Offline integration tests for branch discovery, pruning, and remote fetch failures
