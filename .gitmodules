@@ -258,3 +258,7 @@
 	path = dj/engine-ui
 	url = git@github.com:alexgorbatchev/engine-ui.git
 	branch = main
+[submodule "ai/tools/agent-ask-cli"]
+	path = ai/tools/agent-ask-cli
+	url = git@github.com:alexgorbatchev/agent-ask-cli.git
+	branch = main

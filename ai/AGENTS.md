@@ -1,6 +1,6 @@
 ---
 created_on: 2026-10-18 13:40
-last_modified: 2026-10-18 14:05
+last_modified: 2026-10-23 13:11
 status: current
 ---
 
@@ -33,6 +33,7 @@ Inherits all standing workspace boundaries, code coverage requirements (90%), an
 - `standards/typescript-ai-policy/` -> AI-first linting and formatting policies for TypeScript codebases
 
 ### tools/
+- `tools/agent-ask-cli/` -> Single-turn LLM data processing through authenticated Claude Code or Codex without managing separate API keys
 - `tools/agent-parser/` -> Streaming log parsers, database readers, and harness specs
 - `tools/agent-print-session-cli/` -> CLI utility for filtering, summarizing, and printing agent transcripts
 - `tools/agent-status/` -> Agent session status reporting daemon and interface
